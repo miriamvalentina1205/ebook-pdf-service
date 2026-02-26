@@ -1,5 +1,6 @@
 import express from "express";
-import puppeteer from "puppeteer";
+import puppeteer from "puppeteer-core";
+import chromium from "@sparticuz/chromium";
 import cors from "cors";
 
 const app = express();
@@ -8,7 +9,9 @@ app.use(express.json());
 
 async function generatePdfFromUrl(url) {
   const browser = await puppeteer.launch({
-    args: ["--no-sandbox", "--disable-setuid-sandbox"]
+    args: chromium.args,
+    executablePath: await chromium.executablePath(),
+    headless: chromium.headless
   });
 
   const page = await browser.newPage();
@@ -34,27 +37,6 @@ async function generatePdfFromUrl(url) {
   return pdf;
 }
 
-// POST
-app.post("/generate-pdf", async (req, res) => {
-  try {
-    const { url } = req.body;
-    if (!url) return res.status(400).send("URL não informada");
-
-    const pdf = await generatePdfFromUrl(url);
-
-    res.set({
-      "Content-Type": "application/pdf",
-      "Content-Length": pdf.length
-    });
-
-    res.send(pdf);
-  } catch (error) {
-    console.error(error);
-    res.status(500).send("Erro ao gerar PDF");
-  }
-});
-
-// GET (para teste no navegador)
 app.get("/generate-pdf", async (req, res) => {
   try {
     const { url } = req.query;
